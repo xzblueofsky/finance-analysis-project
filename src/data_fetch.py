@@ -15,5 +15,5 @@ def fetch_all_income_statements(report_date):
 if __name__ == "__main__":
     report_date = '20230331'  # 替换为你需要的报告期
     df = fetch_all_income_statements(report_date)
-    df.to_csv('../data/raw/income_statements_{}.csv'.format(report_date), index=False)
+    df.to_csv('data/raw/income_statements_{}.csv'.format(report_date), index=False)
     print("数据获取完成，保存至 ../data/raw/income_statements_{}.csv".format(report_date))
