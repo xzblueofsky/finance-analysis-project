@@ -5,11 +5,12 @@ import numpy as np
 
 def analyze_financial_indicators(input_file, output_file):
     """
-    计算指定的财务指标，并对所有公司进行排序。
+    计算多期数据的财务指标，并输出结果。
     :param input_file: 清洗后的数据文件路径
     :param output_file: 分析结果文件路径
     """
-    df = pd.read_csv(input_file)
+    df = pd.read_csv(input_file, dtype={'股票代码': str})
+    df['股票代码'] = df['股票代码'].apply(lambda x: x.zfill(6))
 
     # 计算财务指标
     df['营业收入'] = df['营业总收入']
@@ -43,14 +44,13 @@ def analyze_financial_indicators(input_file, output_file):
     df.fillna(0, inplace=True)
 
     # 选择需要的列
-    result_df = df[['股票代码', '股票简称', '营业收入', '毛利率', '费用率', '营业利润率', '毛利润费用占比']]
+    result_df = df[['股票代码', '股票简称', '报告期', '营业收入', '毛利率', '费用率', '营业利润率', '毛利润费用占比']]
 
     result_df.to_csv(output_file, index=False)
     print(f"数据分析完成，保存至 {output_file}")
     return result_df
 
 if __name__ == "__main__":
-    report_date = '20231231'
-    input_file = f'data/clean/income_statements_clean_{report_date}.csv'
-    output_file = f'data/analysis/financial_indicators_{report_date}.csv'
+    input_file = 'data/clean/income_statements_clean.csv'
+    output_file = 'data/analysis/financial_indicators.csv'
     analyze_financial_indicators(input_file, output_file)
