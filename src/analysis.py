@@ -64,6 +64,7 @@ def analyze_cash_flow_statement(input_file, output_file):
 
     # 确保股票代码长度为6位，填充前导零
     df['股票代码'] = df['股票代码'].apply(lambda x: x.zfill(6))
+    print(df.columns)
 
     # 计算需要的指标
     df['经营活动现金流净额'] = df['经营性现金流-现金流量净额']
@@ -85,12 +86,65 @@ def analyze_cash_flow_statement(input_file, output_file):
     result_df.to_csv(output_file, index=False)
     print(f"现金流量表数据分析完成，保存至 {output_file}")
 
+def analyze_balance_sheet(input_file, output_file):
+    """
+    计算资产负债表的财务指标，并输出结果。
+    """
+    df = pd.read_csv(input_file, dtype={'股票代码': str})
+
+    # 确保股票代码长度为6位，填充前导零
+    df['股票代码'] = df['股票代码'].apply(lambda x: x.zfill(6))
+
+    # 计算财务指标
+    df['资产总额'] = df['资产-总资产'] / 1e4  # 转换为万元
+    df['负债总额'] = df['负债-总负债'] / 1e4  # 转换为万元
+    df['股东权益'] = df['股东权益合计'] / 1e4  # 转换为万元
+
+    # 资产负债率已存在，转换为小数
+    df['资产负债率'] = df['资产负债率'] / 100
+
+    # 计算产权比率 = 总负债 / 股东权益
+    df['产权比率'] = df['负债总额'] / df['股东权益']
+
+    # 计算流动比率 = （货币资金 + 应收账款 + 存货）/ （应付账款 + 预收账款）
+    df['流动资产合计'] = df['资产-货币资金'] + df['资产-应收账款'] + df['资产-存货']
+    df['流动负债合计'] = df['负债-应付账款'] + df['负债-预收账款']
+    df['流动比率'] = df['流动资产合计'] / df['流动负债合计']
+
+    # 计算速动比率 = （货币资金 + 应收账款）/ （应付账款 + 预收账款）
+    df['速动资产合计'] = df['资产-货币资金'] + df['资产-应收账款']
+    df['速动比率'] = df['速动资产合计'] / df['流动负债合计']
+
+    # 计算现金比率 = 货币资金 / （应付账款 + 预收账款）
+    df['现金比率'] = df['资产-货币资金'] / df['流动负债合计']
+
+    # 选择需要的列
+    result_df = df[['股票代码', '股票简称', '报告期', '资产总额', '负债总额', '股东权益',
+                    '资产负债率', '产权比率', '流动比率', '速动比率', '现金比率']]
+
+    # 处理无限值和缺失值
+    result_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    result_df.fillna(0, inplace=True)
+
+    result_df.to_csv(output_file, index=False)
+    print(f"资产负债表数据分析完成，保存至 {output_file}")
+
+
 if __name__ == "__main__":
     # 分析利润表（保持原有代码）
-    pass  # 这里省略
+    config = STATEMENT_CONFIG['income_statement']
+    input_file = os.path.join('data', 'clean', config['clean_file'])
+    output_file = os.path.join('data', 'analysis', config['analysis_file'])
+    analyze_income_statement(input_file, output_file)
 
     # 分析现金流量表
     config = STATEMENT_CONFIG['cash_flow_statement']
     input_file = os.path.join('data', 'clean', config['clean_file'])
     output_file = os.path.join('data', 'analysis', config['analysis_file'])
     analyze_cash_flow_statement(input_file, output_file)
+
+    # 分析资产负债表
+    config = STATEMENT_CONFIG['balance_sheet']
+    input_file = os.path.join('data', 'clean', config['clean_file'])
+    output_file = os.path.join('data', 'analysis', config['analysis_file'])
+    analyze_balance_sheet(input_file, output_file)

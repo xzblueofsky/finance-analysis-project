@@ -12,8 +12,6 @@ import pandas as pd
 def clean_financial_statements(report_dates, statement_type):
     """
     清洗并整合指定报告期列表的财务报表数据。
-    :param report_dates: 报告日期列表
-    :param statement_type: 财务报表类型
     """
     config = STATEMENT_CONFIG[statement_type]
     file_prefix = config['file_prefix']
@@ -37,7 +35,6 @@ def clean_financial_statements(report_dates, statement_type):
     # 填充缺失值为0
     combined_df.fillna(0, inplace=True)
     # 数据类型转换
-    # 根据报表类型，指定需要转换的数据列
     if statement_type == 'income_statement':
         amount_columns = ['净利润', '净利润同比', '营业总收入', '营业总收入同比',
                           '营业总支出-营业支出', '营业总支出-销售费用', '营业总支出-管理费用',
@@ -51,6 +48,9 @@ def clean_financial_statements(report_dates, statement_type):
         amount_columns = ['净现金流-净现金流', '净现金流-同比增长', '经营性现金流-现金流量净额',
                           '经营性现金流-净现金流占比', '投资性现金流-现金流量净额', '投资性现金流-净现金流占比',
                           '融资性现金流-现金流量净额', '融资性现金流-净现金流占比']
+    elif statement_type == 'balance_sheet':
+        amount_columns = ['资产-货币资金', '资产-应收账款', '资产-存货', '资产-总资产', '资产-总资产同比',
+                          '负债-应付账款', '负债-总负债', '负债-预收账款', '负债-总负债同比', '资产负债率', '股东权益合计']
     else:
         amount_columns = []
 

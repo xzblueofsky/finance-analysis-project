@@ -13,8 +13,6 @@ import pandas as pd
 def fetch_financial_statements(report_dates, statement_type):
     """
     获取指定报告期列表的财务报表数据。
-    :param report_dates: 报告日期列表，格式为 ['YYYYMMDD', ...]
-    :param statement_type: 财务报表类型，'income_statement' 或 'cash_flow_statement'
     """
     config = STATEMENT_CONFIG[statement_type]
     fetch_function_name = config['fetch_function']
