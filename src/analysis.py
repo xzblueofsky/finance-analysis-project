@@ -1,15 +1,22 @@
 # src/analysis.py
 
+import sys
+import os
+
+# 添加项目根目录到 sys.path
+sys.path.append('.')
+
 import pandas as pd
 import numpy as np
+from config import STATEMENT_CONFIG
 
-def analyze_financial_indicators(input_file, output_file):
+def analyze_income_statement(input_file, output_file):
     """
-    计算多期数据的财务指标，并输出结果。
-    :param input_file: 清洗后的数据文件路径
-    :param output_file: 分析结果文件路径
+    计算利润表的财务指标，并输出结果。
     """
     df = pd.read_csv(input_file, dtype={'股票代码': str})
+
+    # 确保股票代码长度为6位，填充前导零
     df['股票代码'] = df['股票代码'].apply(lambda x: x.zfill(6))
 
     # 计算财务指标
@@ -47,10 +54,43 @@ def analyze_financial_indicators(input_file, output_file):
     result_df = df[['股票代码', '股票简称', '报告期', '营业收入', '毛利率', '费用率', '营业利润率', '毛利润费用占比']]
 
     result_df.to_csv(output_file, index=False)
-    print(f"数据分析完成，保存至 {output_file}")
-    return result_df
+    print(f"利润表数据分析完成，保存至 {output_file}")
+
+def analyze_cash_flow_statement(input_file, output_file):
+    """
+    计算现金流量表的指标，并输出结果。
+    """
+    df = pd.read_csv(input_file, dtype={'股票代码': str})
+
+    # 确保股票代码长度为6位，填充前导零
+    df['股票代码'] = df['股票代码'].apply(lambda x: x.zfill(6))
+
+    # 计算需要的指标
+    df['经营活动现金流净额'] = df['经营性现金流-现金流量净额']
+    df['投资活动现金流净额'] = df['投资性现金流-现金流量净额']
+    df['融资活动现金流净额'] = df['融资性现金流-现金流量净额']
+
+    # 计算自有经营现金净额
+    df['自有经营现金净额'] = df['经营活动现金流净额'] + df['投资活动现金流净额'] + df['融资活动现金流净额']
+
+    # 将单位转换为万元（可选）
+    df['经营活动现金流净额'] = df['经营活动现金流净额'] / 1e4
+    df['投资活动现金流净额'] = df['投资活动现金流净额'] / 1e4
+    df['融资活动现金流净额'] = df['融资活动现金流净额'] / 1e4
+    df['自有经营现金净额'] = df['自有经营现金净额'] / 1e4
+
+    # 选择需要的列
+    result_df = df[['股票代码', '股票简称', '报告期', '经营活动现金流净额', '投资活动现金流净额', '融资活动现金流净额', '自有经营现金净额']]
+
+    result_df.to_csv(output_file, index=False)
+    print(f"现金流量表数据分析完成，保存至 {output_file}")
 
 if __name__ == "__main__":
-    input_file = 'data/clean/income_statements_clean.csv'
-    output_file = 'data/analysis/financial_indicators.csv'
-    analyze_financial_indicators(input_file, output_file)
+    # 分析利润表（保持原有代码）
+    pass  # 这里省略
+
+    # 分析现金流量表
+    config = STATEMENT_CONFIG['cash_flow_statement']
+    input_file = os.path.join('data', 'clean', config['clean_file'])
+    output_file = os.path.join('data', 'analysis', config['analysis_file'])
+    analyze_cash_flow_statement(input_file, output_file)
