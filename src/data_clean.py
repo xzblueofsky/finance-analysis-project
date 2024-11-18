@@ -22,6 +22,8 @@ def clean_financial_statements(report_dates, statement_type):
         input_file = os.path.join('data', 'raw', file_prefix, report_date, f'{file_prefix}_{report_date}.csv')
         if os.path.exists(input_file):
             df = pd.read_csv(input_file, dtype={'股票代码': str})
+            if '代码' in df.columns:
+                df.rename(columns={'代码': '股票代码', '名称': '股票简称'}, inplace=True)
             df['报告期'] = report_date  # 添加报告期列
             df_list.append(df)
         else:
@@ -51,6 +53,10 @@ def clean_financial_statements(report_dates, statement_type):
     elif statement_type == 'balance_sheet':
         amount_columns = ['资产-货币资金', '资产-应收账款', '资产-存货', '资产-总资产', '资产-总资产同比',
                           '负债-应付账款', '负债-总负债', '负债-预收账款', '负债-总负债同比', '资产负债率', '股东权益合计']
+    elif statement_type == 'dividend':
+        amount_columns = ['送转股份-送转总比例', '送转股份-送转比例', '送转股份-转股比例',
+                          '现金分红-现金分红比例', '现金分红-股息率', '每股收益', '每股净资产',
+                          '每股公积金', '每股未分配利润', '净利润同比增长', '总股本']
     else:
         amount_columns = []
 

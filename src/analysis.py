@@ -129,6 +129,45 @@ def analyze_balance_sheet(input_file, output_file):
     result_df.to_csv(output_file, index=False)
     print(f"资产负债表数据分析完成，保存至 {output_file}")
 
+def analyze_dividend(input_file, output_file):
+    """
+    计算分红相关指标，并输出结果。
+    """
+    df = pd.read_csv(input_file, dtype={'股票代码': str})
+
+    # 确保股票代码长度为6位，填充前导零
+    df['股票代码'] = df['股票代码'].apply(lambda x: x.zfill(6))
+
+    # 计算财务指标
+    # 使用 '现金分红-现金分红比例' 作为每股股利，单位是 元（需要确认）
+    df['每股股利'] = df['现金分红-现金分红比例'] / 10
+    df['每股收益'] = df['每股收益']
+
+    # 股利支付率 = 每股股利 / 每股收益
+    df['股利支付率'] = df['每股股利'] / df['每股收益']
+
+    # 股息率 = 现金分红-股息率，直接使用
+    df['股息率'] = df['现金分红-股息率']
+
+    # 股息覆盖率 = 每股收益 / 每股股利
+    df['股息覆盖率'] = df['每股收益'] / df['每股股利']
+
+    # 分红增长率需要有前一期的每股股利，计算环比增长率
+    df.sort_values(by=['股票代码', '报告期'], inplace=True)
+    df['上期每股股利'] = df.groupby('股票代码')['每股股利'].shift(1)
+    df['分红增长率'] = (df['每股股利'] - df['上期每股股利']) / df['上期每股股利']
+    df['分红增长率'].fillna(0, inplace=True)
+
+    # 选择需要的列
+    result_df = df[['股票代码', '股票简称', '报告期', '每股股利', '每股收益', '股利支付率', '股息率', '股息覆盖率', '分红增长率']]
+
+    # 处理缺失值和无限值
+    result_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+    result_df.fillna(0, inplace=True)
+
+    result_df.to_csv(output_file, index=False)
+    print(f"分红数据分析完成，保存至 {output_file}")
+
 
 if __name__ == "__main__":
     # 分析利润表（保持原有代码）
@@ -148,3 +187,9 @@ if __name__ == "__main__":
     input_file = os.path.join('data', 'clean', config['clean_file'])
     output_file = os.path.join('data', 'analysis', config['analysis_file'])
     analyze_balance_sheet(input_file, output_file)
+
+    # 分析分红数据
+    config = STATEMENT_CONFIG['dividend']
+    input_file = os.path.join('data', 'clean', config['clean_file'])
+    output_file = os.path.join('data', 'analysis', config['analysis_file'])
+    analyze_dividend(input_file, output_file)

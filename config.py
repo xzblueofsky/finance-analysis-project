@@ -22,7 +22,7 @@ REPORT_DATES = [
 COMPANY_CODES = ['600519', '000858', '601318']  # 示例公司
 
 # 财务报表类型列表
-STATEMENT_TYPES = ['income_statement', 'cash_flow_statement', 'balance_sheet']
+STATEMENT_TYPES = ['income_statement', 'cash_flow_statement', 'balance_sheet', 'dividend']
 
 # 财务报表配置映射，用于在不同模块中使用
 STATEMENT_CONFIG = {
@@ -49,5 +49,13 @@ STATEMENT_CONFIG = {
         'analysis_file': 'balance_sheet_analysis.csv',
         'analysis_function': 'analyze_balance_sheet',
         'visualization_function': 'visualize_balance_sheet',
+    },
+    'dividend': {
+        'fetch_function': 'stock_fhps_em',
+        'file_prefix': 'dividend',
+        'clean_file': 'dividend_clean.csv',
+        'analysis_file': 'dividend_analysis.csv',
+        'analysis_function': 'analyze_dividend',
+        'visualization_function': 'visualize_dividend',
     },
 }
