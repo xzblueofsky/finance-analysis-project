@@ -48,7 +48,7 @@ def select_stocks():
         criteria['总资产'] = df['资产总额'] >= asset_threshold
 
         # 股息率 ≥ 3%
-        criteria['股息率'] = df['股息率'] >= 0.03
+        criteria['股息率'] = df['股息率'] >= 0.03 
 
         # 股利支付率 ≥ 30%
         criteria['股利支付率'] = df['股利支付率'] >= 0.3
@@ -78,12 +78,16 @@ def select_stocks():
     # 选择满足条件次数 ≥ 4 的公司
     selected_stocks = satisfy_count[satisfy_count['满足条件次数'] >= 4]['股票代码']
 
-    # 获取选中公司的信息
-    selected_df = df_recent[df_recent['股票代码'].isin(selected_stocks)]
-    selected_df = selected_df[['股票代码', '股票简称']].drop_duplicates()
+    # 获取选中公司的信息，包括总资产、营业收入、股息率
+    # 从 df_recent 中获取最新报告期的数据
+    latest_date = df_recent['报告期日期'].max()
+    latest_data = df_recent[df_recent['报告期日期'] == latest_date]
 
-    # 输出选中的股票
-    print("选中的股票列表：")
+    selected_df = latest_data[latest_data['股票代码'].isin(selected_stocks)]
+    selected_df = selected_df[['股票代码', '股票简称', '资产总额', '营业收入', '股息率']].drop_duplicates()
+
+    # 输出选中的股票及其指标
+    print("选中的股票列表及其指标：")
     print(selected_df)
 
     # 保存结果
