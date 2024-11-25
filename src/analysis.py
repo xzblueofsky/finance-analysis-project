@@ -169,7 +169,76 @@ def analyze_dividend(input_file, output_file):
     print(f"分红数据分析完成，保存至 {output_file}")
 
 
+def analyze_company_scale(year):
+    """
+    分析指定年份的公司规模，计算综合排名，并筛选出总资产、净资产、营业收入都进入前30%的企业。
+    """
+    import pandas as pd
+    import numpy as np
+
+    # 读取分析后的数据文件
+    income_df = pd.read_csv('data/analysis/income_statement_analysis.csv', dtype={'股票代码': str})
+    balance_df = pd.read_csv('data/analysis/balance_sheet_analysis.csv', dtype={'股票代码': str})
+    dividend_df = pd.read_csv('data/analysis/dividend_analysis.csv', dtype={'股票代码': str})
+
+    # 确保股票代码长度为6位，填充前导零
+    income_df['股票代码'] = income_df['股票代码'].apply(lambda x: x.zfill(6))
+    balance_df['股票代码'] = balance_df['股票代码'].apply(lambda x: x.zfill(6))
+    dividend_df['股票代码'] = dividend_df['股票代码'].apply(lambda x: x.zfill(6))
+
+    # 过滤指定年份的数据
+    report_date = f"{year}1231"  # 年报日期
+    report_date = int(report_date)
+    income_year = income_df[income_df['报告期'] == 20231231]
+    balance_year = balance_df[balance_df['报告期'] == report_date]
+    dividend_year = dividend_df[dividend_df['报告期'] == report_date]
+
+    # 合并数据
+    merged_df = pd.merge(income_year, balance_year, on=['股票代码', '股票简称', '报告期'], how='inner')
+    merged_df = pd.merge(merged_df, dividend_year, on=['股票代码', '股票简称', '报告期'], how='left')  # 分红数据可能缺失，用 left join
+
+    # 提取需要的字段
+    data_df = merged_df[['股票代码', '股票简称', '资产总额', '股东权益', '营业收入', '股息率', '股利支付率']]
+    data_df.rename(columns={'股东权益': '净资产'}, inplace=True)
+
+    # 处理缺失值
+    data_df.fillna(0, inplace=True)
+
+    # 计算综合排名
+    data_df['总资产排名'] = data_df['资产总额'].rank(ascending=False, method='min')
+    data_df['净资产排名'] = data_df['净资产'].rank(ascending=False, method='min')
+    data_df['营业收入排名'] = data_df['营业收入'].rank(ascending=False, method='min')
+    data_df['综合排名'] = ((data_df['总资产排名'] + data_df['净资产排名'] + data_df['营业收入排名']) / 3).round(0).astype(int)
+
+    # 计算前70%分位数（即前30%的阈值）
+    asset_threshold = data_df['资产总额'].quantile(0.7)
+    equity_threshold = data_df['净资产'].quantile(0.7)
+    revenue_threshold = data_df['营业收入'].quantile(0.7)
+
+    # 筛选总资产、净资产和营业收入都进入前30%的企业
+    filtered_df = data_df[
+        (data_df['资产总额'] >= asset_threshold) &
+        (data_df['净资产'] >= equity_threshold) &
+        (data_df['营业收入'] >= revenue_threshold)
+    ]
+
+    # 保存筛选结果
+    output_file = f'data/analysis/top_companies_{year}.csv'
+    filtered_df.to_csv(output_file, index=False)
+    print(f"筛选结果已保存至 {output_file}")
+
+    # 将所有数据和阈值返回，供可视化使用
+    thresholds = {
+        '资产总额': asset_threshold,
+        '净资产': equity_threshold,
+        '营业收入': revenue_threshold
+    }
+
+    return data_df, thresholds
+
+
 if __name__ == "__main__":
+    '''
     # 分析利润表（保持原有代码）
     config = STATEMENT_CONFIG['income_statement']
     input_file = os.path.join('data', 'clean', config['clean_file'])
@@ -193,3 +262,8 @@ if __name__ == "__main__":
     input_file = os.path.join('data', 'clean', config['clean_file'])
     output_file = os.path.join('data', 'analysis', config['analysis_file'])
     analyze_dividend(input_file, output_file)
+    '''
+    
+    # 分析公司规模
+    year = '2023'
+    data_df, thresholds = analyze_company_scale(year)
